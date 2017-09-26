@@ -1,10 +1,14 @@
 # Changelog
-All notable changes to the 1.36-develop branch will be documented in this file.
+All notable changes to the 2.0-develop branch will be documented in this file.
 
 ## [Unreleased]
 
+## [2.00] - 2018-02-28
+### Changed
+- Port JENKINS-47593 for plugin to be compatible with Jenkins 2.89
+
 ## [1.47] - 2017-11-27
-## Changed
+### Changed
 - Disable AWS slave count cache by default. Use hudson.plugins.ec2.EC2Cloud.cachettl to specify cache in milliseconds
 
 ## [1.46] - 2017-11-13
