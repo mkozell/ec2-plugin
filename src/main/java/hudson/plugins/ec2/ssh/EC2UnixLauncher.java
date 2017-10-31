@@ -47,6 +47,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,8 +57,12 @@ import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.KeyPair;
+import com.amazonaws.services.ec2.model.StartInstancesRequest;
+import com.amazonaws.services.ec2.model.StartInstancesResult;
+import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.HTTPProxyData;
 import com.trilead.ssh2.SCPClient;
@@ -304,7 +310,9 @@ public class EC2UnixLauncher extends EC2ComputerLauncher {
                 return false;
             }
         } finally {
-            bootstrapConn.close();
+            if (bootstrapConn != null) {
+                bootstrapConn.close();
+            }
         }
         return true;
     }
@@ -363,6 +371,17 @@ public class EC2UnixLauncher extends EC2ComputerLauncher {
                 logInfo(computer, listener, "Failed to connect via ssh: " + e.getMessage());
                 logInfo(computer, listener, "Waiting for SSH to come up. Sleeping 5 seconds.");
                 Thread.sleep(5000);
+                // start slave if it is stopped
+                if (computer.getState().toString().equalsIgnoreCase(InstanceStateName.Stopped.toString())) {
+                    logInfo(computer, listener, "AWS instance is stopped");
+                    AmazonEC2 ec2 = computer.getCloud().connect();
+                    List<String> instances = new ArrayList<String>();
+                    instances.add(computer.getInstanceId());
+                    StartInstancesRequest siRequest = new StartInstancesRequest(instances);
+                    StartInstancesResult siResult = ec2.startInstances(siRequest);
+                    logInfo(computer, listener, "sent AWS start request, result: " + siResult);
+                    Thread.sleep(15000);
+                }
             }
         }
     }

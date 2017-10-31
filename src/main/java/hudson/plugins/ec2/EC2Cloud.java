@@ -62,6 +62,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -124,6 +125,8 @@ import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import hudson.util.Secret;
 import hudson.util.StreamTaskListener;
+import org.apache.commons.lang.math.NumberUtils;
+
 
 /**
  * Hudson's view of EC2.
@@ -143,8 +146,17 @@ public abstract class EC2Cloud extends Cloud {
     public static final String EC2_SLAVE_TYPE_DEMAND = "demand";
 
     private static final SimpleFormatter sf = new SimpleFormatter();
+    
+    private static List<long[]> countCache = new ArrayList<long[]>(Arrays.asList(new long[] {1000, 1000}));
+    
+    private static final int CACHE_TTL_DEFAULT = 600000; //10 minutes
+    
+    private static final int cacheTTL = NumberUtils.toInt(
+            System.getProperty(EC2Cloud.class.getCanonicalName() + ".cachettl",
+                    String.valueOf(CACHE_TTL_DEFAULT)), CACHE_TTL_DEFAULT);
 
     private final boolean useInstanceProfileForCredentials;
+    
 
     /**
      * Id of the {@link AmazonWebServicesCredentials} used to connect to Amazon ECS
@@ -365,7 +377,7 @@ public abstract class EC2Cloud extends Cloud {
                 if (isEc2ProvisionedAmiSlave(i.getTags(), description) && (template == null
                         || template.getAmi().equals(i.getImageId()))) {
                     InstanceStateName stateName = InstanceStateName.fromValue(i.getState().getName());
-                    if (stateName != InstanceStateName.Terminated && stateName != InstanceStateName.ShuttingDown) {
+                    if (stateName != InstanceStateName.Terminated && stateName != InstanceStateName.ShuttingDown && stateName != InstanceStateName.Stopped ) {
                         LOGGER.log(Level.FINE, "Existing instance found: " + i.getInstanceId() + " AMI: " + i.getImageId()
                                 + " Template: " + description);
                         n++;
@@ -495,11 +507,26 @@ public abstract class EC2Cloud extends Cloud {
      * Returns the maximum number of possible slaves that can be created.
      */
     private int getPossibleNewSlavesCount(SlaveTemplate template) throws AmazonClientException {
-        int estimatedTotalSlaves = countCurrentEC2Slaves(null);
-        int estimatedAmiSlaves = countCurrentEC2Slaves(template);
-
+        int estimatedTotalSlaves = 5000;
+        int estimatedAmiSlaves = template.getInstanceCap();
+        int availableAmiSlaves = 0;
+        // only count instances in the account if we are specifying an instance cap under 10000
+        if (instanceCap < 10000) {
+            estimatedTotalSlaves = countCurrentEC2Slaves(null);
+        }
+        
+        long[] cachedCount = countCache.get(0);
+        if (cachedCount[0] > 0 || (System.currentTimeMillis() - cachedCount[1] > cacheTTL)) {
+            LOGGER.log(Level.FINEST, "cachedCount = " + cachedCount[0] + " - Last cached refresh(ms) = " + (System.currentTimeMillis() - cachedCount[1]));
+            estimatedAmiSlaves = countCurrentEC2Slaves(template);
+            availableAmiSlaves = template.getInstanceCap() - estimatedAmiSlaves;
+            countCache.set(0, new long[] {availableAmiSlaves,System.currentTimeMillis()});
+        } else {
+            LOGGER.log(Level.FINEST, "cached slave count = " + cachedCount[0] + " - Last cached run time = " + (System.currentTimeMillis() - cachedCount[1]));
+            LOGGER.log(Level.FINE, "Using cached Available AMI slave count: " + availableAmiSlaves + " for another " + ((cacheTTL - (System.currentTimeMillis() - cachedCount[1]))/1000) + " seconds");
+        }
+        
         int availableTotalSlaves = instanceCap - estimatedTotalSlaves;
-        int availableAmiSlaves = template.getInstanceCap() - estimatedAmiSlaves;
         LOGGER.log(Level.FINE, "Available Total Slaves: " + availableTotalSlaves + " Available AMI slaves: " + availableAmiSlaves
                 + " AMI: " + template.getAmi() + " TemplateDesc: " + template.description);
 
@@ -516,7 +543,7 @@ public abstract class EC2Cloud extends Cloud {
          * allocated, we don't look at that instance as available for provisioning.
          */
         int possibleSlavesCount = getPossibleNewSlavesCount(template);
-        if (possibleSlavesCount < 0) {
+        if (possibleSlavesCount <= 0) {
             LOGGER.log(Level.INFO, "Cannot provision - no capacity for instances: " + possibleSlavesCount);
             return null;
         }
@@ -543,11 +570,10 @@ public abstract class EC2Cloud extends Cloud {
             if (label == null) {
                 LOGGER.log(Level.WARNING, String.format("Label is null - can't calculate how many executors slave will have. Using %s number of executors", t.getNumExecutors()));
             }
-            while (excessWorkload > 0) {
+            if (excessWorkload > 0) {
                 final EC2AbstractSlave slave = getNewOrExistingAvailableSlave(t, label, false);
                 // Returned null if a new node could not be created
-                if (slave == null)
-                    break;
+                if (slave != null) {
                 LOGGER.log(Level.INFO, String.format("We have now %s computers", Jenkins.getInstance().getComputers().length));
                 Jenkins.getInstance().addNode(slave);
                 LOGGER.log(Level.INFO, String.format("Added node named: %s, We have now %s computers", slave.getNodeName(), Jenkins.getInstance().getComputers().length));
@@ -564,6 +590,7 @@ public abstract class EC2Cloud extends Cloud {
                 }), t.getNumExecutors()));
 
                 excessWorkload -= t.getNumExecutors();
+                }
             }
             LOGGER.log(Level.INFO, "Attempting provision - finished, excess workload: " + excessWorkload);
             return r;

@@ -36,19 +36,25 @@ public class EC2SlaveMonitor extends AsyncPeriodicWork {
 
     @Override
     protected void execute(TaskListener listener) throws IOException, InterruptedException {
-        for (Node node : Jenkins.getInstance().getNodes()) {
-            if (node instanceof EC2AbstractSlave) {
-                final EC2AbstractSlave ec2Slave = (EC2AbstractSlave) node;
-                try {
-                    if (!ec2Slave.isAlive(true)) {
-                        LOGGER.info("EC2 instance is dead: " + ec2Slave.getInstanceId());
-                        ec2Slave.terminate();
+        int busyExectuors = Jenkins.getInstance().getComputer().getBusyExecutors();
+        LOGGER.log(Level.FINEST, "Number of busy executors is {0} ", busyExectuors);
+        if (busyExectuors == 0) {
+            for (Node node : Jenkins.getInstance().getNodes()) {
+                if (node instanceof EC2AbstractSlave) {
+                    final EC2AbstractSlave ec2Slave = (EC2AbstractSlave) node;
+                    try {
+                        LOGGER.log(Level.FINEST, "slave monitor checking {0} ", ec2Slave.getDisplayName());
+                        if (!ec2Slave.isAlive(true)) {
+                            LOGGER.info("EC2 instance is dead: " + ec2Slave.getInstanceId());
+                            ec2Slave.terminate();
+                        }
+                    } catch (AmazonClientException e) {
+                        LOGGER.info("EC2 instance is dead and failed to terminate: " + ec2Slave.getInstanceId());
+                        removeNode(ec2Slave);
                     }
-                } catch (AmazonClientException e) {
-                    LOGGER.info("EC2 instance is dead and failed to terminate: " + ec2Slave.getInstanceId());
-                    removeNode(ec2Slave);
                 }
             }
+            LOGGER.log(Level.FINEST, "slave monitor check finished");
         }
     }
 

@@ -39,6 +39,8 @@ public class EC2RetentionStrategyTest {
         for (int i = 0; i < upTime.size(); i++) {
             int[] t = upTime.get(i);
             EC2Computer computer = computerWithIdleTime(t[0], t[1]);
+            // sleep 30 seconds since we can't override getIdleStartMilliseconds() 
+            Thread.sleep(30000);
             rs.check(computer);
             assertEquals("Expected " + t[0] + "m" + t[1] + "s to be " + expected.get(i), (boolean) expected.get(i), idleTimeoutCalled.get());
             // reset the assumption

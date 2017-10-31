@@ -128,7 +128,8 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                 // if we have less "free" (aka already paid for) time left than
                 // our idle time, stop/terminate the instance
                 // See JENKINS-23821
-                if (freeSecondsLeft <= TimeUnit.MINUTES.toSeconds(Math.abs(idleTerminationMinutes))) {
+                // Only timeout slave if it has been idle for 30 seconds
+                if ((freeSecondsLeft <= TimeUnit.MINUTES.toSeconds(Math.abs(idleTerminationMinutes))) && (idleMilliseconds >= TimeUnit2.SECONDS.toMillis(30))) {
                     LOGGER.info("Idle timeout of " + computer.getName() + " after "
                             + TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes, with "
                             + TimeUnit2.SECONDS.toMinutes(freeSecondsLeft)
