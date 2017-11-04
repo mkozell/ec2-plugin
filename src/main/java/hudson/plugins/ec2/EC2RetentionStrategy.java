@@ -91,9 +91,9 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
 
     private long internalCheck(EC2Computer computer) {
         /*
-        * If we've been told never to terminate, or node is null(deleted), no checks to perform
+        * If we've been told never to terminate, or node is null(deleted), or node is offline, no checks to perform
         */
-        if (idleTerminationMinutes == 0 || computer.getNode() == null) {
+        if (idleTerminationMinutes == 0 || computer.getNode() == null || computer.isOffline()) {
             return 1;
         }
 

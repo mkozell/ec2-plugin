@@ -295,12 +295,15 @@ public abstract class EC2AbstractSlave extends Slave {
 
     void stop() {
         try {
+            if (!toComputer().isIdle()) {
+                LOGGER.log(Level.WARNING, "Attempting to stop a busy EC2 instance: " + getInstanceId());
+            }
+            toComputer().disconnect(null);
             AmazonEC2 ec2 = getCloud().connect();
             StopInstancesRequest request = new StopInstancesRequest(Collections.singletonList(getInstanceId()));
             LOGGER.fine("Sending stop request for " + getInstanceId());
             ec2.stopInstances(request);
             LOGGER.info("EC2 instance stop request sent for " + getInstanceId());
-            toComputer().disconnect(null);
         } catch (AmazonClientException e) {
             Instance i = getInstance(getInstanceId(), getCloud());
             LOGGER.log(Level.WARNING, "Failed to stop EC2 instance: " + getInstanceId() + " info: "
