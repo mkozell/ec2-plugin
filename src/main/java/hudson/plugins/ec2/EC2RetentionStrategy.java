@@ -58,8 +58,8 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
     private static final int STARTUP_TIMEOUT = NumberUtils.toInt(
             System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".startupTimeout",
                     String.valueOf(STARTUP_TIME_DEFAULT_VALUE)), STARTUP_TIME_DEFAULT_VALUE);
-    private static final int MAX_UPTIME_MINS = NumberUtils.toInt(
-            System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxuptime",
+    private static final int MAX_UPTIME_SEC = NumberUtils.toInt(
+            System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxUptimeSeconds",
                     String.valueOf(Integer.MAX_VALUE)), Integer.MAX_VALUE);
 
     @DataBoundConstructor
@@ -124,10 +124,10 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                     LOGGER.info("Idle timeout of " + computer.getName() + " after "
                             + TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes");
                     computer.getNode().idleTimeout();
-                } else if (uptime > TimeUnit2.MINUTES.toMillis(MAX_UPTIME_MINS)) {
+                } else if (uptime > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
                     LOGGER.info("Idle timeout of " + computer.getName() + " since uptime "
                             + TimeUnit2.MILLISECONDS.toMinutes(uptime) + " mins exceeds "
-                            + MAX_UPTIME_MINS + " mins");
+                            + TimeUnit2.SECONDS.toMinutes(MAX_UPTIME_SEC) + " mins");
                     computer.getNode().idleTimeout();
                 }
             } else {
