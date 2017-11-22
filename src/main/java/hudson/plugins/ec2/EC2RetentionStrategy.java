@@ -101,7 +101,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
         }
 
 
-        if (computer.isIdle() && !DISABLED) {
+        if (computer.isIdle() && !DISABLED && !computer.isConnecting()) {
             final long uptime;
             try {
                 uptime = computer.getUptime();
