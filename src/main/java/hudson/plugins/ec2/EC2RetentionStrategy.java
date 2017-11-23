@@ -126,6 +126,8 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                             + TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes");
                     computer.getNode().idleTimeout();
                 } else if (connectMilliseconds > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
+                    // timeout slave if max connect time has been reached
+                    // useful if you are using T2 AWS tiers
                     LOGGER.info("Connect timeout of " + computer.getName() + " since uptime "
                             + TimeUnit2.MILLISECONDS.toMinutes(connectMilliseconds) + " mins exceeds "
                             + TimeUnit2.SECONDS.toMinutes(MAX_UPTIME_SEC) + " mins");
