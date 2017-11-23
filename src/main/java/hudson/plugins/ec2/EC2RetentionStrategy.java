@@ -100,11 +100,12 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             return 1;
         }
 
-
-        if (computer.isIdle() && !DISABLED && !computer.isConnecting()) {
+        jenkins.model.Uptime masterUptime = new jenkins.model.Uptime();
+        LOGGER.finest("Master uptime is: " + masterUptime);
+        if (computer.isIdle() && !DISABLED && !computer.isConnecting() && masterUptime.getUptime() > 300000) {
             final long uptime;
             try {
-                uptime = computer.getUptime();
+                uptime = computer.getUptime(); 
             } catch (AmazonClientException | InterruptedException e) {
                 // We'll just retry next time we test for idleness.
                 LOGGER.fine("Exception while checking host uptime for " + computer.getName()
