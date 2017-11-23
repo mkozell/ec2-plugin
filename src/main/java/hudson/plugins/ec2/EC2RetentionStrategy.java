@@ -101,8 +101,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             return 1;
         }
 
-        LOGGER.finest("Master uptime is: " + (System.currentTimeMillis() - masterUptime.getUptime()) );
-        if (computer.isIdle() && !DISABLED && !computer.isConnecting() && (System.currentTimeMillis() - masterUptime.getUptime()) > 300000) {
+        if (computer.isIdle() && !DISABLED && !computer.isConnecting()) {
             final long uptime;
             try {
                 uptime = computer.getUptime(); 
@@ -118,7 +117,8 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                 return 1;
             }
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
-            if (idleTerminationMinutes > 0) {
+            LOGGER.finest("Master uptime is: " + (System.currentTimeMillis() - masterUptime.getUptime()) );
+            if (idleTerminationMinutes > 0 && (System.currentTimeMillis() - masterUptime.getUptime()) > 300000) {
                 // TODO: really think about the right strategy here, see
                 // JENKINS-23792
                 if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
