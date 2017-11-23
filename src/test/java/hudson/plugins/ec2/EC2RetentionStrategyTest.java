@@ -23,6 +23,8 @@ public class EC2RetentionStrategyTest {
     @Test
     public void testOnBillingHourRetention() throws Exception {
         EC2RetentionStrategy rs = new EC2RetentionStrategy("-2");
+        //Sleep 5 mins for uptime
+        Thread.sleep(300000);
         List<int[]> upTime = new ArrayList<int[]>();
         List<Boolean> expected = new ArrayList<Boolean>();
         upTime.add(new int[] { 58, 0 });
