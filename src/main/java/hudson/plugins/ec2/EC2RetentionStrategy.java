@@ -100,7 +100,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             return 1;
         }
 
-        if (computer.isIdle() && !DISABLED && !computer.isConnecting()) {
+        if (computer.isIdle() && !DISABLED) {
             final long uptime;
             try {
                 uptime = computer.getUptime(); 
@@ -116,17 +116,18 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                 return 1;
             }
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
-            LOGGER.finest("Slave connect time is: " + (System.currentTimeMillis() - computer.getConnectTime()) );
-            if (idleTerminationMinutes > 0 && (System.currentTimeMillis() - computer.getConnectTime()) > 300000) {
+            final long connectMilliseconds = System.currentTimeMillis() - computer.getConnectTime();
+            LOGGER.finest("Slave connect time is: " + connectMilliseconds);
+            if (idleTerminationMinutes > 0 && connectMilliseconds > 300000) {
                 // TODO: really think about the right strategy here, see
                 // JENKINS-23792
                 if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
                     LOGGER.info("Idle timeout of " + computer.getName() + " after "
                             + TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes");
                     computer.getNode().idleTimeout();
-                } else if (computer.getConnectTime() > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
-                    LOGGER.info("Idle timeout of " + computer.getName() + " since uptime "
-                            + TimeUnit2.MILLISECONDS.toMinutes(uptime) + " mins exceeds "
+                } else if (connectMilliseconds > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
+                    LOGGER.info("Connect timeout of " + computer.getName() + " since uptime "
+                            + TimeUnit2.MILLISECONDS.toMinutes(connectMilliseconds) + " mins exceeds "
                             + TimeUnit2.SECONDS.toMinutes(MAX_UPTIME_SEC) + " mins");
                     computer.getNode().idleTimeout();
                 }
