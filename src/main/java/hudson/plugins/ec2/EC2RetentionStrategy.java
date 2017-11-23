@@ -61,8 +61,6 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
     private static final int MAX_UPTIME_SEC = NumberUtils.toInt(
             System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxUptimeSeconds",
                     String.valueOf(Integer.MAX_VALUE)), Integer.MAX_VALUE);
-    private static final jenkins.model.Uptime masterUptime = new jenkins.model.Uptime();
-    private static final long masterUptimeInMillis = masterUptime.getUptime();
 
     @DataBoundConstructor
     public EC2RetentionStrategy(String idleTerminationMinutes) {
@@ -118,15 +116,15 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                 return 1;
             }
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
-            LOGGER.finest("Master uptime is: " + (System.currentTimeMillis() - masterUptimeInMillis) );
-            if (idleTerminationMinutes > 0 && (System.currentTimeMillis() - masterUptimeInMillis) > 300000) {
+            LOGGER.finest("Slave connect time is: " + (System.currentTimeMillis() - computer.getConnectTime()) );
+            if (idleTerminationMinutes > 0 && (System.currentTimeMillis() - computer.getConnectTime()) > 300000) {
                 // TODO: really think about the right strategy here, see
                 // JENKINS-23792
                 if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
                     LOGGER.info("Idle timeout of " + computer.getName() + " after "
                             + TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes");
                     computer.getNode().idleTimeout();
-                } else if (uptime > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
+                } else if (computer.getConnectTime() > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
                     LOGGER.info("Idle timeout of " + computer.getName() + " since uptime "
                             + TimeUnit2.MILLISECONDS.toMinutes(uptime) + " mins exceeds "
                             + TimeUnit2.SECONDS.toMinutes(MAX_UPTIME_SEC) + " mins");
