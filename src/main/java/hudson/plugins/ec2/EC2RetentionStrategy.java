@@ -119,6 +119,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             final long connectMilliseconds = System.currentTimeMillis() - computer.getConnectTime();
             LOGGER.finest("Slave connect time is: " + connectMilliseconds);
             if (idleTerminationMinutes > 0 && connectMilliseconds > 300000) {
+                // don't timeout slave if it has been connected less than 5 minutes
                 // TODO: really think about the right strategy here, see
                 // JENKINS-23792
                 if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
