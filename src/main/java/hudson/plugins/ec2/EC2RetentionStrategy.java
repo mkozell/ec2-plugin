@@ -61,7 +61,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
     private static final int MAX_UPTIME_SEC = NumberUtils.toInt(
             System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxUptimeSeconds",
                     String.valueOf(Integer.MAX_VALUE)), Integer.MAX_VALUE);
-    private static final long STARTUP_TIME = System.currentTimeMillis();
+    jenkins.model.Uptime masterUptime = new jenkins.model.Uptime();
 
     @DataBoundConstructor
     public EC2RetentionStrategy(String idleTerminationMinutes) {
@@ -101,7 +101,8 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             return 1;
         }
 
-        if (computer.isIdle() && !DISABLED && !computer.isConnecting() && (STARTUP_TIME - System.currentTimeMillis())  > 300000) {
+        LOGGER.finest("Master uptime is: " + String.valueOf(masterUptime));
+        if (computer.isIdle() && !DISABLED && !computer.isConnecting() && masterUptime.getUptime() > 300000) {
             final long uptime;
             try {
                 uptime = computer.getUptime(); 
