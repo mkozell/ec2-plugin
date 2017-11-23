@@ -101,7 +101,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             return 1;
         }
 
-        LOGGER.finest("Master uptime is: " + String.valueOf(masterUptime));
+        LOGGER.finest("Master uptime is: " + masterUptime.getUptime());
         if (computer.isIdle() && !DISABLED && !computer.isConnecting() && masterUptime.getUptime() > 300000) {
             final long uptime;
             try {
