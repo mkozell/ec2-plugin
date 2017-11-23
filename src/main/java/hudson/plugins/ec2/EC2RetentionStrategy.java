@@ -61,7 +61,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
     private static final int MAX_UPTIME_SEC = NumberUtils.toInt(
             System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxUptimeSeconds",
                     String.valueOf(Integer.MAX_VALUE)), Integer.MAX_VALUE);
-    jenkins.model.Uptime masterUptime = new jenkins.model.Uptime();
+    private static final jenkins.model.Uptime masterUptime = new jenkins.model.Uptime();
 
     @DataBoundConstructor
     public EC2RetentionStrategy(String idleTerminationMinutes) {
