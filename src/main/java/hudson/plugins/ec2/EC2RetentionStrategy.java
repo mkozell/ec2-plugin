@@ -59,7 +59,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".startupTimeout",
                     String.valueOf(STARTUP_TIME_DEFAULT_VALUE)), STARTUP_TIME_DEFAULT_VALUE);
     private static final int MAX_UPTIME_SEC = NumberUtils.toInt(
-            System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxUptimeSeconds",
+            System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxConnectTimeSeconds",
                     String.valueOf(Integer.MAX_VALUE)), Integer.MAX_VALUE);
 
     @DataBoundConstructor
@@ -100,10 +100,11 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             return 1;
         }
 
+
         if (computer.isIdle() && !DISABLED) {
             final long uptime;
             try {
-                uptime = computer.getUptime(); 
+                uptime = computer.getUptime();
             } catch (AmazonClientException | InterruptedException e) {
                 // We'll just retry next time we test for idleness.
                 LOGGER.fine("Exception while checking host uptime for " + computer.getName()
@@ -117,7 +118,7 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
             }
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
             final long connectMilliseconds = System.currentTimeMillis() - computer.getConnectTime();
-            LOGGER.finest("Slave connect time is: " + connectMilliseconds);
+            LOGGER.finest(computer.getName() + " connected time is: " + connectMilliseconds);
             if (idleTerminationMinutes > 0 && connectMilliseconds > 300000) {
                 // don't timeout slave if it has been connected less than 5 minutes
                 // TODO: really think about the right strategy here, see
@@ -129,9 +130,9 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                 } else if (connectMilliseconds > TimeUnit2.SECONDS.toMillis(MAX_UPTIME_SEC)) {
                     // timeout slave if max connect time has been reached
                     // useful if you are using T2 AWS tiers
-                    LOGGER.info("Connect timeout of " + computer.getName() + " since uptime "
+                    LOGGER.info("Connect timeout of " + computer.getName() + " - connect time "
                             + TimeUnit2.MILLISECONDS.toMinutes(connectMilliseconds) + " mins exceeds "
-                            + TimeUnit2.SECONDS.toMinutes(MAX_UPTIME_SEC) + " mins");
+                            + TimeUnit2.SECONDS.toMinutes(MAX_UPTIME_SEC) + " min max");
                     computer.getNode().idleTimeout();
                 }
             } else {
