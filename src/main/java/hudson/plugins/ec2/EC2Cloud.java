@@ -149,7 +149,7 @@ public abstract class EC2Cloud extends Cloud {
     
     private static List<long[]> countCache = new ArrayList<long[]>(Arrays.asList(new long[] {1000, 1000}));
     
-    private static final int CACHE_TTL_DEFAULT = 600000; //10 minutes
+    private static final int CACHE_TTL_DEFAULT = 0; //disabled by default
     
     private static final int cacheTTL = NumberUtils.toInt(
             System.getProperty(EC2Cloud.class.getCanonicalName() + ".cachettl",

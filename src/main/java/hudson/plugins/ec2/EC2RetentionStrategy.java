@@ -58,6 +58,9 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
     private static final int STARTUP_TIMEOUT = NumberUtils.toInt(
             System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".startupTimeout",
                     String.valueOf(STARTUP_TIME_DEFAULT_VALUE)), STARTUP_TIME_DEFAULT_VALUE);
+    private static final int MAX_CONNECT_SEC = NumberUtils.toInt(
+            System.getProperty(EC2RetentionStrategy.class.getCanonicalName() + ".maxConnectTimeSeconds",
+                    String.valueOf(Integer.MAX_VALUE)), Integer.MAX_VALUE);
 
     @DataBoundConstructor
     public EC2RetentionStrategy(String idleTerminationMinutes) {
@@ -114,12 +117,22 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
                 return 1;
             }
             final long idleMilliseconds = System.currentTimeMillis() - computer.getIdleStartMilliseconds();
-            if (idleTerminationMinutes > 0) {
+            final long connectMilliseconds = System.currentTimeMillis() - computer.getConnectTime();
+            LOGGER.finest(computer.getName() + " connected time is: " + connectMilliseconds);
+            if (idleTerminationMinutes > 0 && connectMilliseconds > 300000) {
+                // don't timeout slave if it has been connected less than 5 minutes
                 // TODO: really think about the right strategy here, see
                 // JENKINS-23792
                 if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
                     LOGGER.info("Idle timeout of " + computer.getName() + " after "
                             + TimeUnit2.MILLISECONDS.toMinutes(idleMilliseconds) + " idle minutes");
+                    computer.getNode().idleTimeout();
+                } else if (connectMilliseconds > TimeUnit2.SECONDS.toMillis(MAX_CONNECT_SEC)) {
+                    // timeout slave if max connect time has been reached
+                    // useful if you are using T2 AWS tiers
+                    LOGGER.info("Connect timeout of " + computer.getName() + " - connect time "
+                            + TimeUnit2.MILLISECONDS.toMinutes(connectMilliseconds) + " mins exceeds "
+                            + TimeUnit2.SECONDS.toMinutes(MAX_CONNECT_SEC) + " min max");
                     computer.getNode().idleTimeout();
                 }
             } else {
