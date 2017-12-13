@@ -907,6 +907,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
         }
 
         for (SecurityGroup group : groupResult.getSecurityGroups()) {
+        	LOGGER.info("groupVpcID=" + group.getVpcID());
             if (group.getVpcId() != null && !group.getVpcId().isEmpty()) {
                 List<Filter> filters = new ArrayList<Filter>();
                 filters.add(new Filter("vpc-id").withValues(group.getVpcId()));
@@ -916,7 +917,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
                 DescribeSubnetsRequest subnetReq = new DescribeSubnetsRequest();
                 subnetReq.withFilters(filters);
                 DescribeSubnetsResult subnetResult = ec2.describeSubnets(subnetReq);
-
+                LOGGER.info("subnetResult" + subnetResult.getSubnets());
                 List<Subnet> subnets = subnetResult.getSubnets();
                 if (subnets != null && !subnets.isEmpty()) {
                     groupIds.add(group.getGroupId());
@@ -925,6 +926,8 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
         }
 
         if (securityGroupSet.size() != groupIds.size()) {
+            LOGGER.info("securityGroupSet=" + securityGroupSet.toString());
+            LOGGER.info("groupIds=" + Arrays.toString(groiupIds.toArray()));
             throw new AmazonClientException("Security groups must all be VPC security groups to work in a VPC context");
         }
 
