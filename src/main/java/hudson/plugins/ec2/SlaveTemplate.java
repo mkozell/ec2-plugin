@@ -927,7 +927,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
 
         if (securityGroupSet.size() != groupIds.size()) {
             LOGGER.info("securityGroupSet=" + securityGroupSet.toString());
-            LOGGER.info("groupIds=" + Arrays.toString(groiupIds.toArray()));
+            LOGGER.info("groupIds=" + Arrays.toString(groupIds.toArray()));
             throw new AmazonClientException("Security groups must all be VPC security groups to work in a VPC context");
         }
 
