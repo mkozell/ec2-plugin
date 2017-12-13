@@ -907,7 +907,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
         }
 
         for (SecurityGroup group : groupResult.getSecurityGroups()) {
-        	LOGGER.info("groupVpcID=" + group.getVpcID());
+        	LOGGER.info("groupVpcID=" + group.getVpcId());
             if (group.getVpcId() != null && !group.getVpcId().isEmpty()) {
                 List<Filter> filters = new ArrayList<Filter>();
                 filters.add(new Filter("vpc-id").withValues(group.getVpcId()));
