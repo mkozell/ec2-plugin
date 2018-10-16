@@ -125,6 +125,8 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
     public boolean connectBySSHProcess;
 
     public final boolean connectUsingPublicIp;
+    
+    public static final String creditSpecification = System.getProperty("hudson.plugins.ec2.cpucredits","standard");
 
     private transient/* almost final */Set<LabelAtom> labelSet;
 
@@ -587,6 +589,10 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
                 }
                 if (StringUtils.isNotBlank(getIamInstanceProfile())) {
                     riRequest.setIamInstanceProfile(new IamInstanceProfileSpecification().withArn(getIamInstanceProfile()));
+                }
+                // For T2 and T3 instances, set CPU credit option accordingly
+                if (type.toString().toLowerCase().startsWith("t"))
+                    riRequest.getCreditSpecification().setCpuCredits(creditSpecification);
                 }
                 // Have to create a new instance
                 Instance inst = ec2.runInstances(riRequest).getReservation().getInstances().get(0);
