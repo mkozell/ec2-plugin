@@ -1,7 +1,13 @@
 # Changelog
-All notable changes to the 2.0-develop branch will be documented in this file.
+All notable changes to the 2.1-develop branch will be documented in this file.
 
 ## [Unreleased]
+
+## [2.10] - 2018-10-16
+### Added
+- Use startup property hudson.plugins.ec2.t2unlimited=true to enable T2 Unlimited
+### Changed
+- Requires Jenkins AWS Java SDK plugin version 1.11.248 or newer
 
 ## [2.00] - 2018-02-28
 ### Changed
