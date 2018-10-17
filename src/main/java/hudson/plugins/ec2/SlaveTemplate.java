@@ -125,6 +125,8 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
     public boolean connectBySSHProcess;
 
     public final boolean connectUsingPublicIp;
+    
+    public static final boolean t2Unlimited = Boolean.parseBoolean(System.getProperty("hudson.plugins.ec2.t2unlimited","false"));
 
     private transient/* almost final */Set<LabelAtom> labelSet;
 
@@ -587,6 +589,10 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
                 }
                 if (StringUtils.isNotBlank(getIamInstanceProfile())) {
                     riRequest.setIamInstanceProfile(new IamInstanceProfileSpecification().withArn(getIamInstanceProfile()));
+                }
+                // For T2 instances, set CPU credit type accordingly
+                if (t2Unlimited && type.toString().toLowerCase().startsWith("t2")) {
+                    riRequest.setCreditSpecification(new CreditSpecificationRequest().withCpuCredits("unlimited"));
                 }
                 // Have to create a new instance
                 Instance inst = ec2.runInstances(riRequest).getReservation().getInstances().get(0);
