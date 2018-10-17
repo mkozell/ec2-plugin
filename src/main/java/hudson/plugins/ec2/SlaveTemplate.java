@@ -591,7 +591,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
                     riRequest.setIamInstanceProfile(new IamInstanceProfileSpecification().withArn(getIamInstanceProfile()));
                 }
                 // For T2 instances, set CPU credit type accordingly
-                if (type.toString().toLowerCase().startsWith("t2") && t2Unlimited) {
+                if (t2Unlimited && type.toString().toLowerCase().startsWith("t2")) {
                     riRequest.setCreditSpecification(new CreditSpecificationRequest().withCpuCredits("unlimited"));
                 }
                 // Have to create a new instance
